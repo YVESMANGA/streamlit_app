@@ -31,7 +31,7 @@ if uploaded_file:
             # Bouton pour lancer la prédiction
             if st.button("🔍 Lancer la prédiction"):
                 with st.spinner("Envoi du fichier à l'API..."):
-                    api_url = "https://fastapi-api-54e7.onrender.com"  # Modifier si l’API est en ligne
+                    api_url = "https://fastapi-api-54e7.onrender.com/predict"  # Modifier si l’API est en ligne
 
                     # Réinitialiser le curseur du fichier (important)
                     uploaded_file.seek(0)
