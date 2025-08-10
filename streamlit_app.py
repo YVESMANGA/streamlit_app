@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import requests
 import io
+import csv
 
 # ========================
 # Configuration de la page
@@ -18,20 +19,33 @@ uploaded_file = st.file_uploader("📤 Choisir un fichier CSV", type=["csv"])
 
 if uploaded_file:
     try:
-        # Lire et afficher un aperçu du fichier
-        df = pd.read_csv(uploaded_file, sep=";")
+        # Lire le contenu en bytes et détecter automatiquement le séparateur
+        uploaded_file.seek(0)
+        content = uploaded_file.read().decode("utf-8")
+
+        try:
+            dialect = csv.Sniffer().sniff(content[:1024])
+            sep = dialect.delimiter
+        except csv.Error:
+            sep = ','  # Valeur par défaut si détection impossible
+
+        # Remettre le curseur au début pour que pandas puisse relire le fichier
+        uploaded_file.seek(0)
+        df = pd.read_csv(uploaded_file, sep=sep)
+
         st.subheader("📄 Aperçu du fichier importé")
         st.dataframe(df.head())
 
         # Vérification des colonnes attendues
-        expected_cols = ['length', 'height_left', 'height_right', 'margin_up', 'margin_low', 'diagonal']
-        if not set(expected_cols).issubset(df.columns):
+        expected_cols = ['diagonal', 'height_left', 'height_right', 'margin_low', 'margin_up', 'length']
+        if set(df.columns) != set(expected_cols):
             st.error(f"❌ Le fichier doit contenir exactement ces colonnes : {expected_cols}")
+
         else:
             # Bouton pour lancer la prédiction
             if st.button("🔍 Lancer la prédiction"):
                 with st.spinner("Envoi du fichier à l'API..."):
-                    api_url = "https://fastapi-api-54e7.onrender.com/predict"  # Modifier si l’API est en ligne
+                    api_url = "http://127.0.0.1:8000/predict/"  # Modifier si l’API est en ligne
 
                     # Réinitialiser le curseur du fichier (important)
                     uploaded_file.seek(0)
@@ -54,7 +68,6 @@ if uploaded_file:
                             0: "❌ Faux billet",
                             1: "✅ Vrai billet"
                         })
-
 
                         st.success("✅ Prédictions reçues avec succès !")
                         st.subheader("📋 Résultat des prédictions")
